@@ -1,0 +1,99 @@
+{
+  "uid": "berlin-events-editorial-activity",
+  "title": "Editorial Activity",
+  "tags": ["berlin-events", "editorial"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 4,
+  "refresh": "10m",
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Current Picks",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS current_picks FROM editors_choice"}]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Upcoming Picks",
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS upcoming_picks FROM editors_choice ec JOIN events e ON e.id = ec.event_id WHERE e.datum >= CURRENT_DATE"}]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Current Picks for Past Events",
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS past_picks FROM editors_choice ec JOIN events e ON e.id = ec.event_id WHERE e.datum < CURRENT_DATE"}]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Editors",
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(DISTINCT COALESCE(selected_by, 'unknown')) AS editors FROM editors_choice"}]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Current Picks by Selection Day",
+      "gridPos": {"h": 8, "w": 14, "x": 0, "y": 4},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "time_series", "rawSql": "SELECT date_trunc('day', selected_at) AS time, 'picks' AS metric, count(*) AS value FROM editors_choice WHERE selected_at >= now() - INTERVAL '90 days' GROUP BY 1 ORDER BY 1"}]
+    },
+    {
+      "id": 6,
+      "type": "barchart",
+      "title": "Picks by Editor",
+      "gridPos": {"h": 8, "w": 10, "x": 14, "y": 4},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(selected_by, 'unknown') AS selected_by, count(*) AS picks FROM editors_choice GROUP BY 1 ORDER BY picks DESC"}]
+    },
+    {
+      "id": 7,
+      "type": "barchart",
+      "title": "Picks by District",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 12},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(l.district, 'unknown') AS district, count(*) AS picks FROM editors_choice ec JOIN events e ON e.id = ec.event_id JOIN locations l ON l.id = e.location_id GROUP BY 1 ORDER BY picks DESC LIMIT 12"}]
+    },
+    {
+      "id": 8,
+      "type": "barchart",
+      "title": "Picks by Category",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 12},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(NULLIF(trim(e.category), ''), 'uncategorized') AS category, count(*) AS picks FROM editors_choice ec JOIN events e ON e.id = ec.event_id GROUP BY 1 ORDER BY picks DESC LIMIT 12"}]
+    },
+    {
+      "id": 9,
+      "type": "barchart",
+      "title": "Picked Events by Event Day",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 12},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT e.datum, count(*) AS picks FROM editors_choice ec JOIN events e ON e.id = ec.event_id WHERE e.datum >= CURRENT_DATE GROUP BY e.datum ORDER BY e.datum LIMIT 20"}]
+    },
+    {
+      "id": 10,
+      "type": "table",
+      "title": "Current Picks",
+      "gridPos": {"h": 9, "w": 16, "x": 0, "y": 20},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT ec.selected_at, ec.selected_by, e.datum, e.von, e.thema AS title, l.name AS location, COALESCE(l.district, '') AS district, ec.note FROM editors_choice ec JOIN events e ON e.id = ec.event_id JOIN locations l ON l.id = e.location_id ORDER BY e.datum >= CURRENT_DATE DESC, e.datum, e.von LIMIT 60"}]
+    },
+    {
+      "id": 11,
+      "type": "table",
+      "title": "Upcoming Pick Coverage by Day",
+      "gridPos": {"h": 9, "w": 8, "x": 16, "y": 20},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT e.datum, count(*) AS events, count(ec.event_id) AS picked_events, round(100.0 * count(ec.event_id) / NULLIF(count(*), 0), 2) AS pick_coverage_percent FROM events e LEFT JOIN editors_choice ec ON ec.event_id = e.id WHERE e.datum >= CURRENT_DATE AND e.datum < CURRENT_DATE + INTERVAL '30 days' GROUP BY e.datum ORDER BY e.datum LIMIT 30"}]
+    }
+  ]
+}

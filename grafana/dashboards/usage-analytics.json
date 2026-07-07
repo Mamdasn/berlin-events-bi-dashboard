@@ -1,0 +1,103 @@
+{
+  "uid": "berlin-events-usage-analytics",
+  "title": "Usage Analytics",
+  "tags": ["berlin-events", "usage"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 3,
+  "refresh": "10m",
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Hits Today",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(sum(hits), 0) AS hits_today FROM usage_metrics_api WHERE day = CURRENT_DATE"}]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Hits Last 30 Days",
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(sum(hits), 0) AS hits_last_30_days FROM usage_metrics_api WHERE day >= CURRENT_DATE - INTERVAL '30 days'"}]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Tracked Endpoints",
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(DISTINCT endpoint) AS tracked_endpoints FROM usage_metrics_api WHERE day >= CURRENT_DATE - INTERVAL '30 days'"}]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Location Bins",
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS location_bins FROM usage_metrics_geo WHERE day >= CURRENT_DATE - INTERVAL '30 days'"}]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "API Hits by Endpoint",
+      "gridPos": {"h": 9, "w": 16, "x": 0, "y": 4},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "time_series", "rawSql": "SELECT day::timestamp AS time, endpoint AS metric, hits AS value FROM usage_metrics_api WHERE day >= CURRENT_DATE - INTERVAL '30 days' ORDER BY day, endpoint"}]
+    },
+    {
+      "id": 6,
+      "type": "barchart",
+      "title": "Hits by Endpoint",
+      "gridPos": {"h": 9, "w": 8, "x": 16, "y": 4},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT endpoint, sum(hits) AS hits FROM usage_metrics_api WHERE day >= CURRENT_DATE - INTERVAL '30 days' GROUP BY endpoint ORDER BY hits DESC"}]
+    },
+    {
+      "id": 7,
+      "type": "geomap",
+      "title": "Location Check-ins",
+      "gridPos": {"h": 10, "w": 14, "x": 0, "y": 13},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT lat_bin::double precision AS latitude, lon_bin::double precision AS longitude, sum(hits) AS hits FROM usage_metrics_geo WHERE day >= CURRENT_DATE - INTERVAL '30 days' GROUP BY lat_bin, lon_bin ORDER BY hits DESC LIMIT 500"}],
+      "options": {
+        "view": {"id": "coords", "lat": 52.52, "lon": 13.405, "zoom": 10},
+        "layers": [{"type": "markers", "name": "check-ins", "config": {"showLegend": true, "style": {"size": {"fixed": 8, "min": 4, "max": 24}}}}]
+      }
+    },
+    {
+      "id": 8,
+      "type": "table",
+      "title": "Daily Location Bins",
+      "gridPos": {"h": 10, "w": 10, "x": 14, "y": 13},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT day, lat_bin, lon_bin, hits FROM usage_metrics_geo ORDER BY day DESC, hits DESC LIMIT 100"}]
+    },
+    {
+      "id": 9,
+      "type": "barchart",
+      "title": "Busiest Usage Days",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 23},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT day, sum(hits) AS hits FROM usage_metrics_api GROUP BY day ORDER BY hits DESC LIMIT 20"}]
+    },
+    {
+      "id": 10,
+      "type": "barchart",
+      "title": "Endpoint Share Today",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 23},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT endpoint, hits FROM usage_metrics_api WHERE day = CURRENT_DATE ORDER BY hits DESC"}]
+    },
+    {
+      "id": 11,
+      "type": "table",
+      "title": "Raw Endpoint Metrics",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 23},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT day, endpoint, hits FROM usage_metrics_api ORDER BY day DESC, hits DESC LIMIT 120"}]
+    }
+  ]
+}

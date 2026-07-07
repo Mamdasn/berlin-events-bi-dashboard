@@ -1,0 +1,108 @@
+{
+  "uid": "berlin-events-analytics",
+  "title": "Events Analytics",
+  "tags": ["berlin-events", "events"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 3,
+  "refresh": "10m",
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Upcoming Events",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS upcoming_events FROM events WHERE datum >= CURRENT_DATE"}]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Events Today",
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS events_today FROM events WHERE datum = CURRENT_DATE"}]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Next 7 Days",
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS events_next_7_days FROM events WHERE datum >= CURRENT_DATE AND datum < CURRENT_DATE + INTERVAL '7 days'"}]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Active Sources",
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(DISTINCT source) AS active_sources FROM events WHERE datum >= CURRENT_DATE"}]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Events per Day by Source",
+      "gridPos": {"h": 9, "w": 16, "x": 0, "y": 4},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "fieldConfig": {"defaults": {"custom": {"stacking": {"mode": "normal"}}}, "overrides": []},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "time_series", "rawSql": "SELECT datum::timestamp AS time, source AS metric, count(*) AS value FROM events WHERE datum >= CURRENT_DATE - INTERVAL '30 days' GROUP BY datum, source ORDER BY datum, source"}]
+    },
+    {
+      "id": 6,
+      "type": "barchart",
+      "title": "Events by District",
+      "gridPos": {"h": 9, "w": 8, "x": 16, "y": 4},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(l.district, 'unknown') AS district, count(*) AS events FROM events e LEFT JOIN locations l ON l.id = e.location_id WHERE e.datum >= CURRENT_DATE GROUP BY 1 ORDER BY events DESC LIMIT 15"}]
+    },
+    {
+      "id": 7,
+      "type": "barchart",
+      "title": "Top Categories",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 13},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(NULLIF(trim(category), ''), 'uncategorized') AS category, count(*) AS events FROM events WHERE datum >= CURRENT_DATE GROUP BY 1 ORDER BY events DESC LIMIT 12"}]
+    },
+    {
+      "id": 8,
+      "type": "barchart",
+      "title": "Events by Start Hour",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 13},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT to_char(von, 'HH24:00') AS hour, count(*) AS events FROM events WHERE datum >= CURRENT_DATE GROUP BY 1 ORDER BY 1"}]
+    },
+    {
+      "id": 9,
+      "type": "barchart",
+      "title": "Events by Source",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 13},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(NULLIF(source, ''), 'unknown') AS source, count(*) AS events FROM events WHERE datum >= CURRENT_DATE GROUP BY 1 ORDER BY events DESC LIMIT 12"}]
+    },
+    {
+      "id": 10,
+      "type": "table",
+      "title": "Busiest Locations",
+      "gridPos": {"h": 8, "w": 10, "x": 0, "y": 21},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT l.name AS location, COALESCE(l.district, '') AS district, count(*) AS upcoming_events FROM events e JOIN locations l ON l.id = e.location_id WHERE e.datum >= CURRENT_DATE GROUP BY l.name, l.district ORDER BY upcoming_events DESC LIMIT 25"}]
+    },
+    {
+      "id": 11,
+      "type": "table",
+      "title": "Longest Running Upcoming Events",
+      "gridPos": {"h": 8, "w": 14, "x": 10, "y": 21},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT e.datum, e.von, e.bis, e.thema AS title, l.name AS location, COALESCE(l.district, '') AS district, (e.bis - e.von) AS duration FROM events e JOIN locations l ON l.id = e.location_id WHERE e.datum >= CURRENT_DATE ORDER BY duration DESC NULLS LAST, e.datum, e.von LIMIT 40"}]
+    },
+    {
+      "id": 12,
+      "type": "table",
+      "title": "Upcoming Events",
+      "gridPos": {"h": 9, "w": 24, "x": 0, "y": 29},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT e.datum, e.von, e.bis, e.thema AS title, COALESCE(l.name, '') AS location, COALESCE(l.district, '') AS district, COALESCE(e.category, '') AS category, COALESCE(e.source, '') AS source FROM events e LEFT JOIN locations l ON l.id = e.location_id WHERE e.datum >= CURRENT_DATE ORDER BY e.datum, e.von NULLS LAST LIMIT 80"}]
+    }
+  ]
+}

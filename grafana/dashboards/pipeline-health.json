@@ -1,0 +1,115 @@
+{
+  "uid": "berlin-events-pipeline-health",
+  "title": "Pipeline Health",
+  "tags": ["berlin-events", "pipeline"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 3,
+  "refresh": "10m",
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Total Events",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS total_events FROM events"}]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Upcoming Events",
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS upcoming_events FROM events WHERE datum >= CURRENT_DATE"}]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Locations",
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS locations FROM locations"}]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Geocoded Locations %",
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT round(100.0 * count(*) FILTER (WHERE lat IS NOT NULL AND lon IS NOT NULL) / NULLIF(count(*), 0), 2) AS geocoded_percent FROM locations"}]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Missing Coordinates",
+      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 0},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS missing_coordinates FROM locations WHERE lat IS NULL OR lon IS NULL"}]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Known Future Horizon",
+      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 0},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(max(datum), CURRENT_DATE) AS latest_event_date FROM events"}]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Event Date Coverage",
+      "gridPos": {"h": 8, "w": 14, "x": 0, "y": 4},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "time_series", "rawSql": "SELECT datum::timestamp AS time, 'events' AS metric, count(*) AS value FROM events WHERE datum >= CURRENT_DATE - INTERVAL '60 days' GROUP BY datum ORDER BY datum"}]
+    },
+    {
+      "id": 8,
+      "type": "barchart",
+      "title": "Source Future Coverage Days",
+      "gridPos": {"h": 8, "w": 10, "x": 14, "y": 4},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(source, 'unknown') AS source, GREATEST(max(datum) - CURRENT_DATE, 0) AS days_ahead FROM events GROUP BY 1 ORDER BY days_ahead DESC LIMIT 12"}]
+    },
+    {
+      "id": 9,
+      "type": "barchart",
+      "title": "Geocoding Coverage",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 12},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT CASE WHEN lat IS NULL OR lon IS NULL THEN 'missing coordinates' ELSE 'has coordinates' END AS status, count(*) AS locations FROM locations GROUP BY 1 ORDER BY locations DESC"}]
+    },
+    {
+      "id": 10,
+      "type": "barchart",
+      "title": "Events Missing Coordinates by Source",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 12},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(e.source, 'unknown') AS source, count(*) AS events FROM events e JOIN locations l ON l.id = e.location_id WHERE e.datum >= CURRENT_DATE AND (l.lat IS NULL OR l.lon IS NULL) GROUP BY 1 ORDER BY events DESC LIMIT 12"}]
+    },
+    {
+      "id": 11,
+      "type": "barchart",
+      "title": "Events with Empty Metadata",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 12},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT label, value FROM (VALUES ('missing title', (SELECT count(*) FROM events WHERE thema IS NULL OR trim(thema) = '')), ('missing category', (SELECT count(*) FROM events WHERE category IS NULL OR trim(category) = '')), ('missing description', (SELECT count(*) FROM events WHERE description IS NULL OR trim(description) = '')), ('missing image', (SELECT count(*) FROM events WHERE image_url IS NULL OR trim(image_url) = ''))) AS metrics(label, value) ORDER BY value DESC"}]
+    },
+    {
+      "id": 12,
+      "type": "table",
+      "title": "Recently Geocoded Locations",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT name AS location, district, lat AS latitude, lon AS longitude, geocoded_at FROM locations ORDER BY geocoded_at DESC NULLS LAST LIMIT 30"}]
+    },
+    {
+      "id": 13,
+      "type": "table",
+      "title": "Locations Missing Coordinates",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT name AS location, COALESCE(plz, '') AS plz, COALESCE(district, '') AS district, geocoded_at FROM locations WHERE lat IS NULL OR lon IS NULL ORDER BY geocoded_at DESC NULLS LAST, name LIMIT 50"}]
+    }
+  ]
+}
