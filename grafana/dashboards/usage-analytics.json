@@ -4,100 +4,104 @@
   "tags": ["berlin-events", "usage"],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 3,
+  "version": 4,
   "refresh": "10m",
   "panels": [
     {
       "id": 1,
       "type": "stat",
-      "title": "Hits Today",
-      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "title": "Page Views Today",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(sum(hits), 0) AS hits_today FROM usage_metrics_api WHERE day = CURRENT_DATE"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(sum(page_hits), 0) AS page_views_today FROM usage_metrics_identity WHERE day = CURRENT_DATE"}]
     },
     {
       "id": 2,
       "type": "stat",
-      "title": "Hits Last 30 Days",
-      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "title": "Unique IPs Today",
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(sum(hits), 0) AS hits_last_30_days FROM usage_metrics_api WHERE day >= CURRENT_DATE - INTERVAL '30 days'"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(DISTINCT ip_hash) AS unique_ips_today FROM usage_metrics_identity WHERE day = CURRENT_DATE"}]
     },
     {
       "id": 3,
       "type": "stat",
-      "title": "Tracked Endpoints",
-      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+      "title": "Unique Tokens Today",
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(DISTINCT endpoint) AS tracked_endpoints FROM usage_metrics_api WHERE day >= CURRENT_DATE - INTERVAL '30 days'"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(DISTINCT token_hash) AS unique_tokens_today FROM usage_metrics_identity WHERE day = CURRENT_DATE"}]
     },
     {
       "id": 4,
       "type": "stat",
-      "title": "Location Bins",
-      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+      "title": "Unique Users Today",
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS location_bins FROM usage_metrics_geo WHERE day >= CURRENT_DATE - INTERVAL '30 days'"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS unique_users_today FROM usage_metrics_identity WHERE day = CURRENT_DATE"}]
     },
     {
       "id": 5,
+      "type": "stat",
+      "title": "Token API Hits Today",
+      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 0},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(sum(api_hits), 0) AS token_api_hits_today FROM usage_metrics_identity WHERE day = CURRENT_DATE"}]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Event API Hits Today",
+      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 0},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(sum(event_hits), 0) AS event_api_hits_today FROM usage_metrics_identity WHERE day = CURRENT_DATE"}]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Unique Audience Over Time",
+      "gridPos": {"h": 9, "w": 16, "x": 0, "y": 4},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "time_series", "rawSql": "SELECT day::timestamp AS time, metric, value FROM (SELECT day, 'unique_ips' AS metric, count(DISTINCT ip_hash)::bigint AS value FROM usage_metrics_identity WHERE day >= CURRENT_DATE - INTERVAL '30 days' GROUP BY day UNION ALL SELECT day, 'unique_tokens' AS metric, count(DISTINCT token_hash)::bigint AS value FROM usage_metrics_identity WHERE day >= CURRENT_DATE - INTERVAL '30 days' GROUP BY day UNION ALL SELECT day, 'unique_users' AS metric, count(*)::bigint AS value FROM usage_metrics_identity WHERE day >= CURRENT_DATE - INTERVAL '30 days' GROUP BY day) s ORDER BY time, metric"}]
+    },
+    {
+      "id": 8,
+      "type": "barchart",
+      "title": "Token Usage by Action",
+      "gridPos": {"h": 9, "w": 8, "x": 16, "y": 4},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT label, hits FROM (VALUES ('page views', (SELECT COALESCE(sum(page_hits), 0) FROM usage_metrics_identity WHERE day >= CURRENT_DATE - INTERVAL '30 days')), ('day api', (SELECT COALESCE(sum(api_hits - event_hits - verify_hits), 0) FROM usage_metrics_identity WHERE day >= CURRENT_DATE - INTERVAL '30 days')), ('event detail', (SELECT COALESCE(sum(detail_hits), 0) FROM usage_metrics_identity WHERE day >= CURRENT_DATE - INTERVAL '30 days')), ('event search', (SELECT COALESCE(sum(search_hits), 0) FROM usage_metrics_identity WHERE day >= CURRENT_DATE - INTERVAL '30 days')), ('nearby', (SELECT COALESCE(sum(nearby_hits), 0) FROM usage_metrics_identity WHERE day >= CURRENT_DATE - INTERVAL '30 days')), ('verify', (SELECT COALESCE(sum(verify_hits), 0) FROM usage_metrics_identity WHERE day >= CURRENT_DATE - INTERVAL '30 days'))) AS metrics(label, hits) ORDER BY hits DESC"}]
+    },
+    {
+      "id": 9,
       "type": "timeseries",
       "title": "API Hits by Endpoint",
-      "gridPos": {"h": 9, "w": 16, "x": 0, "y": 4},
+      "gridPos": {"h": 9, "w": 16, "x": 0, "y": 13},
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "targets": [{"refId": "A", "rawQuery": true, "format": "time_series", "rawSql": "SELECT day::timestamp AS time, endpoint AS metric, hits AS value FROM usage_metrics_api WHERE day >= CURRENT_DATE - INTERVAL '30 days' ORDER BY day, endpoint"}]
     },
     {
-      "id": 6,
+      "id": 10,
       "type": "barchart",
       "title": "Hits by Endpoint",
-      "gridPos": {"h": 9, "w": 8, "x": 16, "y": 4},
+      "gridPos": {"h": 9, "w": 8, "x": 16, "y": 13},
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT endpoint, sum(hits) AS hits FROM usage_metrics_api WHERE day >= CURRENT_DATE - INTERVAL '30 days' GROUP BY endpoint ORDER BY hits DESC"}]
     },
     {
-      "id": 7,
-      "type": "geomap",
-      "title": "Location Check-ins",
-      "gridPos": {"h": 10, "w": 14, "x": 0, "y": 13},
-      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT lat_bin::double precision AS latitude, lon_bin::double precision AS longitude, sum(hits) AS hits FROM usage_metrics_geo WHERE day >= CURRENT_DATE - INTERVAL '30 days' GROUP BY lat_bin, lon_bin ORDER BY hits DESC LIMIT 500"}],
-      "options": {
-        "view": {"id": "coords", "lat": 52.52, "lon": 13.405, "zoom": 10},
-        "layers": [{"type": "markers", "name": "check-ins", "config": {"showLegend": true, "style": {"size": {"fixed": 8, "min": 4, "max": 24}}}}]
-      }
-    },
-    {
-      "id": 8,
-      "type": "table",
-      "title": "Daily Location Bins",
-      "gridPos": {"h": 10, "w": 10, "x": 14, "y": 13},
-      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT day, lat_bin, lon_bin, hits FROM usage_metrics_geo ORDER BY day DESC, hits DESC LIMIT 100"}]
-    },
-    {
-      "id": 9,
-      "type": "barchart",
-      "title": "Busiest Usage Days",
-      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 23},
-      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT day, sum(hits) AS hits FROM usage_metrics_api GROUP BY day ORDER BY hits DESC LIMIT 20"}]
-    },
-    {
-      "id": 10,
-      "type": "barchart",
-      "title": "Endpoint Share Today",
-      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 23},
-      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT endpoint, hits FROM usage_metrics_api WHERE day = CURRENT_DATE ORDER BY hits DESC"}]
-    },
-    {
       "id": 11,
       "type": "table",
-      "title": "Raw Endpoint Metrics",
-      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 23},
+      "title": "Most Active Token Hashes",
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 22},
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT day, endpoint, hits FROM usage_metrics_api ORDER BY day DESC, hits DESC LIMIT 120"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT left(token_hash, 12) AS token_hash, count(DISTINCT ip_hash) AS ip_count, sum(page_hits) AS page_hits, sum(api_hits) AS api_hits, sum(event_hits) AS event_hits, max(last_seen) AS last_seen FROM usage_metrics_identity WHERE day >= CURRENT_DATE - INTERVAL '30 days' GROUP BY token_hash ORDER BY api_hits DESC, page_hits DESC LIMIT 50"}]
+    },
+    {
+      "id": 12,
+      "type": "table",
+      "title": "HTTP Status and Latency",
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 22},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT day, endpoint, status, hits, round(total_ms::numeric / NULLIF(hits, 0), 1) AS avg_ms FROM usage_metrics_http WHERE day >= CURRENT_DATE - INTERVAL '30 days' ORDER BY day DESC, hits DESC LIMIT 100"}]
     }
   ]
 }

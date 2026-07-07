@@ -9,4 +9,4 @@ ENV GF_ANALYTICS_REPORTING_ENABLED=false \
     GF_AUTH_ANONYMOUS_ENABLED=false
 
 COPY provisioning /etc/grafana/provisioning
-COPY dashboards /var/lib/grafana/dashboards
+COPY dashboards /etc/grafana/dashboards
