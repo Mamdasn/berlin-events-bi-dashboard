@@ -1,0 +1,8 @@
+services:
+  bi-auth-gateway:
+    build: .
+    image: sfarhad/berlin-events-bi-gateway:0.1.0
+
+  bi-grafana:
+    build: ./grafana
+    image: sfarhad/berlin-events-bi-grafana:0.1.0
