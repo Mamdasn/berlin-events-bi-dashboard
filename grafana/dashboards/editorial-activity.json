@@ -2,7 +2,7 @@
   "uid": "berlin-events-editorial-activity",
   "title": "Editorial Activity",
   "tags": ["berlin-events", "editorial"],
-  "timezone": "browser",
+  "timezone": "Europe/Berlin",
   "schemaVersion": 39,
   "version": 5,
   "editable": false,
@@ -40,7 +40,7 @@
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "#73BF69"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#73BF69", "value": null}]}}, "overrides": []},
       "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS upcoming_picks FROM editors_choice ec JOIN events e ON e.id = ec.event_id WHERE e.datum >= CURRENT_DATE"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS upcoming_picks FROM editors_choice ec JOIN events e ON e.id = ec.event_id WHERE e.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date"}]
     },
     {
       "id": 3,
@@ -51,7 +51,7 @@
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}]}}, "overrides": []},
       "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS past_picks FROM editors_choice ec JOIN events e ON e.id = ec.event_id WHERE e.datum < CURRENT_DATE"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS past_picks FROM editors_choice ec JOIN events e ON e.id = ec.event_id WHERE e.datum < (now() AT TIME ZONE 'Europe/Berlin')::date"}]
     },
     {
       "id": 4,
@@ -125,7 +125,7 @@
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "fixed", "fixedColor": "#73BF69"}, "custom": {"lineWidth": 1, "fillOpacity": 80, "gradientMode": "none", "axisPlacement": "auto", "axisColorMode": "text", "scaleDistribution": {"type": "linear"}, "axisCenteredZero": false, "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
       "options": {"orientation": "vertical", "xTickLabelRotation": -45, "xTickLabelSpacing": 0, "showValue": "auto", "stacking": "none", "groupWidth": 0.7, "barWidth": 0.9, "barRadius": 0, "fullHighlight": false, "tooltip": {"mode": "single", "sort": "none"}, "legend": {"showLegend": false, "displayMode": "list", "placement": "bottom", "calcs": []}},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT e.datum, count(*) AS picks FROM editors_choice ec JOIN events e ON e.id = ec.event_id WHERE e.datum >= CURRENT_DATE GROUP BY e.datum ORDER BY e.datum LIMIT 20"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT e.datum, count(*) AS picks FROM editors_choice ec JOIN events e ON e.id = ec.event_id WHERE e.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date GROUP BY e.datum ORDER BY e.datum LIMIT 20"}]
     },
     {
       "id": 102,
@@ -144,7 +144,7 @@
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false, "filterable": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": [{"matcher": {"id": "byName", "options": "selected_at"}, "properties": [{"id": "unit", "value": "dateTimeAsIso"}]}, {"matcher": {"id": "byName", "options": "datum"}, "properties": [{"id": "unit", "value": "time:YYYY-MM-DD"}]}, {"matcher": {"id": "byName", "options": "title"}, "properties": [{"id": "custom.width", "value": 260}]}]},
       "options": {"showHeader": true, "cellHeight": "sm", "footer": {"show": false, "countRows": false, "fields": "", "reducer": ["sum"]}},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT ec.selected_at, ec.selected_by, e.datum, e.von, e.thema AS title, l.name AS location, COALESCE(l.district, '') AS district, ec.note FROM editors_choice ec JOIN events e ON e.id = ec.event_id JOIN locations l ON l.id = e.location_id ORDER BY e.datum >= CURRENT_DATE DESC, e.datum, e.von LIMIT 60"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT ec.selected_at, ec.selected_by, e.datum, e.von, e.thema AS title, l.name AS location, COALESCE(l.district, '') AS district, ec.note FROM editors_choice ec JOIN events e ON e.id = ec.event_id JOIN locations l ON l.id = e.location_id ORDER BY e.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date DESC, e.datum, e.von LIMIT 60"}]
     },
     {
       "id": 11,
@@ -155,7 +155,7 @@
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false, "filterable": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": [{"matcher": {"id": "byName", "options": "datum"}, "properties": [{"id": "unit", "value": "time:YYYY-MM-DD"}]}, {"matcher": {"id": "byName", "options": "pick_coverage_percent"}, "properties": [{"id": "unit", "value": "percent"}, {"id": "custom.cellOptions", "value": {"type": "color-background", "mode": "gradient"}}, {"id": "custom.align", "value": "right"}, {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 25}, {"color": "green", "value": 60}]}}]}, {"matcher": {"id": "byName", "options": "events"}, "properties": [{"id": "custom.align", "value": "right"}]}, {"matcher": {"id": "byName", "options": "picked_events"}, "properties": [{"id": "custom.align", "value": "right"}]}]},
       "options": {"showHeader": true, "cellHeight": "sm", "footer": {"show": false, "countRows": false, "fields": "", "reducer": ["sum"]}},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT e.datum, count(*) AS events, count(ec.event_id) AS picked_events, round(100.0 * count(ec.event_id) / NULLIF(count(*), 0), 2) AS pick_coverage_percent FROM events e LEFT JOIN editors_choice ec ON ec.event_id = e.id WHERE e.datum >= CURRENT_DATE AND e.datum < CURRENT_DATE + INTERVAL '30 days' GROUP BY e.datum ORDER BY e.datum LIMIT 30"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT e.datum, count(*) AS events, count(ec.event_id) AS picked_events, round(100.0 * count(ec.event_id) / NULLIF(count(*), 0), 2) AS pick_coverage_percent FROM events e LEFT JOIN editors_choice ec ON ec.event_id = e.id WHERE e.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date AND e.datum < (now() AT TIME ZONE 'Europe/Berlin')::date + INTERVAL '30 days' GROUP BY e.datum ORDER BY e.datum LIMIT 30"}]
     }
   ]
 }

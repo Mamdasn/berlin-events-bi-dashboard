@@ -2,7 +2,7 @@
   "uid": "berlin-events-analytics",
   "title": "Events Analytics",
   "tags": ["berlin-events", "events"],
-  "timezone": "browser",
+  "timezone": "Europe/Berlin",
   "schemaVersion": 39,
   "version": 4,
   "editable": false,
@@ -29,7 +29,7 @@
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "#3D71D9"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#3D71D9", "value": null}]}}, "overrides": []},
       "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS upcoming_events FROM events WHERE datum >= CURRENT_DATE"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS upcoming_events FROM events WHERE datum >= (now() AT TIME ZONE 'Europe/Berlin')::date"}]
     },
     {
       "id": 2,
@@ -40,7 +40,7 @@
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "#73BF69"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#73BF69", "value": null}]}}, "overrides": []},
       "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS events_today FROM events WHERE datum = CURRENT_DATE"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS events_today FROM events WHERE datum = (now() AT TIME ZONE 'Europe/Berlin')::date"}]
     },
     {
       "id": 3,
@@ -51,7 +51,7 @@
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "#5794F2"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#5794F2", "value": null}]}}, "overrides": []},
       "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS events_next_7_days FROM events WHERE datum >= CURRENT_DATE AND datum < CURRENT_DATE + INTERVAL '7 days'"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS events_next_7_days FROM events WHERE datum >= (now() AT TIME ZONE 'Europe/Berlin')::date AND datum < (now() AT TIME ZONE 'Europe/Berlin')::date + INTERVAL '7 days'"}]
     },
     {
       "id": 4,
@@ -62,7 +62,7 @@
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "#B877D9"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#B877D9", "value": null}]}}, "overrides": []},
       "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(DISTINCT source) AS active_sources FROM events WHERE datum >= CURRENT_DATE"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(DISTINCT source) AS active_sources FROM events WHERE datum >= (now() AT TIME ZONE 'Europe/Berlin')::date"}]
     },
     {
       "id": 101,
@@ -81,7 +81,7 @@
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "short", "min": 0, "color": {"mode": "palette-classic"}, "custom": {"drawStyle": "bars", "lineInterpolation": "linear", "lineWidth": 1, "fillOpacity": 75, "gradientMode": "none", "spanNulls": false, "showPoints": "never", "stacking": {"mode": "normal", "group": "A"}, "axisPlacement": "auto", "axisColorMode": "text", "scaleDistribution": {"type": "linear"}, "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
       "options": {"legend": {"showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["sum", "lastNotNull"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "time_series", "rawSql": "SELECT datum::timestamp AS time, source AS metric, count(*) AS value FROM events WHERE datum >= CURRENT_DATE - INTERVAL '30 days' GROUP BY datum, source ORDER BY datum, source"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "time_series", "rawSql": "SELECT datum::timestamp AS time, source AS metric, count(*) AS value FROM events WHERE datum >= (now() AT TIME ZONE 'Europe/Berlin')::date - INTERVAL '30 days' GROUP BY datum, source ORDER BY datum, source"}]
     },
     {
       "id": 6,
@@ -92,7 +92,7 @@
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "continuous-BlPu"}, "custom": {"lineWidth": 1, "fillOpacity": 80, "gradientMode": "none", "axisPlacement": "auto", "axisColorMode": "text", "scaleDistribution": {"type": "linear"}, "axisCenteredZero": false, "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
       "options": {"orientation": "horizontal", "xTickLabelRotation": 0, "xTickLabelSpacing": 100, "showValue": "auto", "stacking": "none", "groupWidth": 0.7, "barWidth": 0.9, "barRadius": 0, "fullHighlight": false, "colorByField": "events", "tooltip": {"mode": "single", "sort": "none"}, "legend": {"showLegend": false, "displayMode": "list", "placement": "bottom", "calcs": []}},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(l.district, 'unknown') AS district, count(*) AS events FROM events e LEFT JOIN locations l ON l.id = e.location_id WHERE e.datum >= CURRENT_DATE GROUP BY 1 ORDER BY events DESC LIMIT 15"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(l.district, 'unknown') AS district, count(*) AS events FROM events e LEFT JOIN locations l ON l.id = e.location_id WHERE e.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date GROUP BY 1 ORDER BY events DESC LIMIT 15"}]
     },
     {
       "id": 7,
@@ -103,7 +103,7 @@
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "continuous-BlPu"}, "custom": {"lineWidth": 1, "fillOpacity": 80, "gradientMode": "none", "axisPlacement": "auto", "axisColorMode": "text", "scaleDistribution": {"type": "linear"}, "axisCenteredZero": false, "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
       "options": {"orientation": "horizontal", "xTickLabelRotation": 0, "xTickLabelSpacing": 100, "showValue": "auto", "stacking": "none", "groupWidth": 0.7, "barWidth": 0.9, "barRadius": 0, "fullHighlight": false, "colorByField": "events", "tooltip": {"mode": "single", "sort": "none"}, "legend": {"showLegend": false, "displayMode": "list", "placement": "bottom", "calcs": []}},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(NULLIF(trim(category), ''), 'uncategorized') AS category, count(*) AS events FROM events WHERE datum >= CURRENT_DATE GROUP BY 1 ORDER BY events DESC LIMIT 12"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(NULLIF(trim(category), ''), 'uncategorized') AS category, count(*) AS events FROM events WHERE datum >= (now() AT TIME ZONE 'Europe/Berlin')::date GROUP BY 1 ORDER BY events DESC LIMIT 12"}]
     },
     {
       "id": 8,
@@ -114,7 +114,7 @@
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "fixed", "fixedColor": "#5794F2"}, "custom": {"lineWidth": 1, "fillOpacity": 80, "gradientMode": "none", "axisPlacement": "auto", "axisColorMode": "text", "scaleDistribution": {"type": "linear"}, "axisCenteredZero": false, "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
       "options": {"orientation": "vertical", "xTickLabelRotation": -45, "xTickLabelSpacing": 0, "showValue": "auto", "stacking": "none", "groupWidth": 0.7, "barWidth": 0.9, "barRadius": 0, "fullHighlight": false, "tooltip": {"mode": "single", "sort": "none"}, "legend": {"showLegend": false, "displayMode": "list", "placement": "bottom", "calcs": []}},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT to_char(von, 'HH24:00') AS hour, count(*) AS events FROM events WHERE datum >= CURRENT_DATE GROUP BY 1 ORDER BY 1"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT to_char(von, 'HH24:00') AS hour, count(*) AS events FROM events WHERE datum >= (now() AT TIME ZONE 'Europe/Berlin')::date GROUP BY 1 ORDER BY 1"}]
     },
     {
       "id": 9,
@@ -125,7 +125,7 @@
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "continuous-BlPu"}, "custom": {"lineWidth": 1, "fillOpacity": 80, "gradientMode": "none", "axisPlacement": "auto", "axisColorMode": "text", "scaleDistribution": {"type": "linear"}, "axisCenteredZero": false, "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
       "options": {"orientation": "horizontal", "xTickLabelRotation": 0, "xTickLabelSpacing": 100, "showValue": "auto", "stacking": "none", "groupWidth": 0.7, "barWidth": 0.9, "barRadius": 0, "fullHighlight": false, "colorByField": "events", "tooltip": {"mode": "single", "sort": "none"}, "legend": {"showLegend": false, "displayMode": "list", "placement": "bottom", "calcs": []}},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(NULLIF(source, ''), 'unknown') AS source, count(*) AS events FROM events WHERE datum >= CURRENT_DATE GROUP BY 1 ORDER BY events DESC LIMIT 12"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(NULLIF(source, ''), 'unknown') AS source, count(*) AS events FROM events WHERE datum >= (now() AT TIME ZONE 'Europe/Berlin')::date GROUP BY 1 ORDER BY events DESC LIMIT 12"}]
     },
     {
       "id": 102,
@@ -144,7 +144,7 @@
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false, "filterable": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": [{"matcher": {"id": "byName", "options": "upcoming_events"}, "properties": [{"id": "custom.cellOptions", "value": {"type": "gauge", "mode": "gradient", "valueDisplayMode": "text"}}, {"id": "color", "value": {"mode": "continuous-BlPu"}}]}]},
       "options": {"showHeader": true, "cellHeight": "sm", "footer": {"show": false, "countRows": false, "fields": "", "reducer": ["sum"]}},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT l.name AS location, COALESCE(l.district, '') AS district, count(*) AS upcoming_events FROM events e JOIN locations l ON l.id = e.location_id WHERE e.datum >= CURRENT_DATE GROUP BY l.name, l.district ORDER BY upcoming_events DESC LIMIT 25"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT l.name AS location, COALESCE(l.district, '') AS district, count(*) AS upcoming_events FROM events e JOIN locations l ON l.id = e.location_id WHERE e.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date GROUP BY l.name, l.district ORDER BY upcoming_events DESC LIMIT 25"}]
     },
     {
       "id": 11,
@@ -155,7 +155,7 @@
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false, "filterable": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": [{"matcher": {"id": "byName", "options": "datum"}, "properties": [{"id": "unit", "value": "time:YYYY-MM-DD"}]}, {"matcher": {"id": "byName", "options": "title"}, "properties": [{"id": "custom.width", "value": 260}]}]},
       "options": {"showHeader": true, "cellHeight": "sm", "footer": {"show": false, "countRows": false, "fields": "", "reducer": ["sum"]}},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT e.datum, e.von, e.bis, e.thema AS title, l.name AS location, COALESCE(l.district, '') AS district, (e.bis - e.von) AS duration FROM events e JOIN locations l ON l.id = e.location_id WHERE e.datum >= CURRENT_DATE ORDER BY duration DESC NULLS LAST, e.datum, e.von LIMIT 40"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT e.datum, e.von, e.bis, e.thema AS title, l.name AS location, COALESCE(l.district, '') AS district, (e.bis - e.von) AS duration FROM events e JOIN locations l ON l.id = e.location_id WHERE e.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date ORDER BY duration DESC NULLS LAST, e.datum, e.von LIMIT 40"}]
     },
     {
       "id": 12,
@@ -166,7 +166,7 @@
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false, "filterable": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": [{"matcher": {"id": "byName", "options": "datum"}, "properties": [{"id": "unit", "value": "time:YYYY-MM-DD"}]}, {"matcher": {"id": "byName", "options": "title"}, "properties": [{"id": "custom.width", "value": 280}]}]},
       "options": {"showHeader": true, "cellHeight": "sm", "footer": {"show": false, "countRows": false, "fields": "", "reducer": ["sum"]}},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT e.datum, e.von, e.bis, e.thema AS title, COALESCE(l.name, '') AS location, COALESCE(l.district, '') AS district, COALESCE(e.category, '') AS category, COALESCE(e.source, '') AS source FROM events e LEFT JOIN locations l ON l.id = e.location_id WHERE e.datum >= CURRENT_DATE ORDER BY e.datum, e.von NULLS LAST LIMIT 80"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT e.datum, e.von, e.bis, e.thema AS title, COALESCE(l.name, '') AS location, COALESCE(l.district, '') AS district, COALESCE(e.category, '') AS category, COALESCE(e.source, '') AS source FROM events e LEFT JOIN locations l ON l.id = e.location_id WHERE e.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date ORDER BY e.datum, e.von NULLS LAST LIMIT 80"}]
     }
   ]
 }
