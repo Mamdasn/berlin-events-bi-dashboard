@@ -4,7 +4,7 @@
   "tags": ["berlin-events", "pipeline"],
   "timezone": "Europe/Berlin",
   "schemaVersion": 39,
-  "version": 4,
+  "version": 6,
   "editable": false,
   "style": "dark",
   "graphTooltip": 1,
@@ -84,7 +84,7 @@
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "time:YYYY-MM-DD", "color": {"mode": "fixed", "fixedColor": "#B877D9"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#B877D9", "value": null}]}}, "overrides": []},
       "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(max(datum), (now() AT TIME ZONE 'Europe/Berlin')::date) AS latest_event_date FROM events"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT (EXTRACT(EPOCH FROM COALESCE(max(datum), (now() AT TIME ZONE 'Europe/Berlin')::date)::timestamp) * 1000)::bigint AS latest_event_date FROM events"}]
     },
     {
       "id": 101,
@@ -150,11 +150,85 @@
       "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT label, value FROM (VALUES ('missing title', (SELECT count(*) FROM events WHERE thema IS NULL OR trim(thema) = '')), ('missing category', (SELECT count(*) FROM events WHERE category IS NULL OR trim(category) = '')), ('missing description', (SELECT count(*) FROM events WHERE description IS NULL OR trim(description) = '')), ('missing image', (SELECT count(*) FROM events WHERE image_url IS NULL OR trim(image_url) = ''))) AS metrics(label, value) ORDER BY value DESC"}]
     },
     {
+      "id": 103,
+      "type": "row",
+      "title": "Dedupe",
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 22},
+      "panels": []
+    },
+    {
+      "id": 14,
+      "type": "stat",
+      "title": "Visible Upcoming Events",
+      "description": "Upcoming public events after auto-duplicates are hidden.",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 23},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "#3D71D9"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#3D71D9", "value": null}]}}, "overrides": []},
+      "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS visible_upcoming_events FROM visible_events WHERE datum >= (now() AT TIME ZONE 'Europe/Berlin')::date"}]
+    },
+    {
+      "id": 15,
+      "type": "stat",
+      "title": "Auto-Duplicates Hidden",
+      "description": "Upcoming raw events hidden from public views by auto-duplicate links.",
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 23},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "#E02F44"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#E02F44", "value": null}]}}, "overrides": []},
+      "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS hidden_auto_duplicates FROM event_duplicate_links dl JOIN events duplicate_event ON duplicate_event.id = dl.duplicate_event_id WHERE dl.decision = 'auto_duplicate' AND duplicate_event.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date"}]
+    },
+    {
+      "id": 16,
+      "type": "stat",
+      "title": "Possible Duplicate Links",
+      "description": "Upcoming duplicate candidates that still need review or threshold tuning.",
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 23},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "#FF9830"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#FF9830", "value": null}]}}, "overrides": []},
+      "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS possible_duplicate_links FROM event_duplicate_links dl JOIN events canonical_event ON canonical_event.id = dl.canonical_event_id JOIN events duplicate_event ON duplicate_event.id = dl.duplicate_event_id WHERE dl.decision = 'possible_duplicate' AND (canonical_event.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date OR duplicate_event.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date)"}]
+    },
+    {
+      "id": 17,
+      "type": "stat",
+      "title": "Upcoming Suppression",
+      "description": "Share of upcoming raw events hidden by auto-dedupe.",
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 23},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "fieldConfig": {"defaults": {"unit": "percent", "decimals": 2, "color": {"mode": "fixed", "fixedColor": "#FF9830"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#FF9830", "value": null}]}}, "overrides": []},
+      "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT round(100.0 * hidden.hidden_count / NULLIF(raw.raw_count, 0), 2) AS upcoming_suppression_percent FROM (SELECT count(*) AS raw_count FROM events WHERE datum >= (now() AT TIME ZONE 'Europe/Berlin')::date) raw CROSS JOIN (SELECT count(*) AS hidden_count FROM event_duplicate_links dl JOIN events duplicate_event ON duplicate_event.id = dl.duplicate_event_id WHERE dl.decision = 'auto_duplicate' AND duplicate_event.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date) hidden"}]
+    },
+    {
+      "id": 18,
+      "type": "timeseries",
+      "title": "Raw vs Visible Events per Day",
+      "description": "Daily raw event count compared with the public visible count and hidden auto-duplicates.",
+      "gridPos": {"h": 8, "w": 14, "x": 0, "y": 27},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "fieldConfig": {"defaults": {"unit": "short", "min": 0, "color": {"mode": "palette-classic"}, "custom": {"drawStyle": "bars", "lineInterpolation": "linear", "lineWidth": 1, "fillOpacity": 65, "gradientMode": "none", "spanNulls": false, "showPoints": "never", "stacking": {"mode": "none", "group": "A"}, "axisPlacement": "auto", "axisColorMode": "text", "scaleDistribution": {"type": "linear"}, "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
+      "options": {"legend": {"showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "sum"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "time_series", "rawSql": "SELECT datum::timestamp AS time, metric, value FROM (SELECT e.datum, 'raw_events' AS metric, count(*) AS value FROM events e WHERE e.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date - INTERVAL '60 days' GROUP BY e.datum UNION ALL SELECT e.datum, 'visible_events' AS metric, count(*) AS value FROM visible_events e WHERE e.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date - INTERVAL '60 days' GROUP BY e.datum UNION ALL SELECT duplicate_event.datum, 'auto_duplicates_hidden' AS metric, count(*) AS value FROM event_duplicate_links dl JOIN events duplicate_event ON duplicate_event.id = dl.duplicate_event_id WHERE dl.decision = 'auto_duplicate' AND duplicate_event.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date - INTERVAL '60 days' GROUP BY duplicate_event.datum) s ORDER BY time, metric"}]
+    },
+    {
+      "id": 19,
+      "type": "table",
+      "title": "Recent Duplicate Links",
+      "description": "Newest duplicate relationships involving recent or upcoming duplicate events.",
+      "gridPos": {"h": 8, "w": 10, "x": 14, "y": 27},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false, "filterable": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": [{"matcher": {"id": "byName", "options": "created_at"}, "properties": [{"id": "unit", "value": "dateTimeAsIso"}]}, {"matcher": {"id": "byName", "options": "datum"}, "properties": [{"id": "unit", "value": "time:YYYY-MM-DD"}]}, {"matcher": {"id": "byName", "options": "canonical_title"}, "properties": [{"id": "custom.width", "value": 260}]}, {"matcher": {"id": "byName", "options": "duplicate_title"}, "properties": [{"id": "custom.width", "value": 260}]}, {"matcher": {"id": "byName", "options": "canonical_source"}, "properties": [{"id": "custom.width", "value": 180}]}, {"matcher": {"id": "byName", "options": "duplicate_source"}, "properties": [{"id": "custom.width", "value": 180}]}]},
+      "options": {"showHeader": true, "cellHeight": "sm", "footer": {"show": false, "countRows": false, "fields": "", "reducer": ["sum"]}},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT dl.created_at, dl.decision, round(dl.score::numeric, 3) AS score, duplicate_event.datum, duplicate_event.von, canonical_event.thema AS canonical_title, duplicate_event.thema AS duplicate_title, canonical_event.source AS canonical_source, duplicate_event.source AS duplicate_source, COALESCE(l.name, '') AS location FROM event_duplicate_links dl JOIN events canonical_event ON canonical_event.id = dl.canonical_event_id JOIN events duplicate_event ON duplicate_event.id = dl.duplicate_event_id LEFT JOIN locations l ON l.id = duplicate_event.location_id WHERE duplicate_event.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date - INTERVAL '7 days' ORDER BY dl.created_at DESC, duplicate_event.datum, duplicate_event.von LIMIT 50"}]
+    },
+    {
       "id": 102,
       "type": "row",
       "title": "Detail",
       "collapsed": false,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 22},
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 35},
       "panels": []
     },
     {
@@ -162,7 +236,7 @@
       "type": "table",
       "title": "Recently Geocoded Locations",
       "description": "Most recently geocoded venues.",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 23},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 36},
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false, "filterable": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": [{"matcher": {"id": "byName", "options": "latitude"}, "properties": [{"id": "decimals", "value": 4}, {"id": "custom.align", "value": "right"}]}, {"matcher": {"id": "byName", "options": "longitude"}, "properties": [{"id": "decimals", "value": 4}, {"id": "custom.align", "value": "right"}]}, {"matcher": {"id": "byName", "options": "geocoded_at"}, "properties": [{"id": "unit", "value": "dateTimeAsIso"}]}]},
       "options": {"showHeader": true, "cellHeight": "sm", "footer": {"show": false, "countRows": false, "fields": "", "reducer": ["sum"]}},
@@ -173,7 +247,7 @@
       "type": "table",
       "title": "Locations Missing Coordinates",
       "description": "Venues awaiting geocoding.",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 23},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 36},
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false, "filterable": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": [{"matcher": {"id": "byName", "options": "geocoded_at"}, "properties": [{"id": "unit", "value": "dateTimeAsIso"}]}]},
       "options": {"showHeader": true, "cellHeight": "sm", "footer": {"show": false, "countRows": false, "fields": "", "reducer": ["sum"]}},

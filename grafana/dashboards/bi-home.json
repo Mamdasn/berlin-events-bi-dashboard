@@ -1,0 +1,111 @@
+{
+  "uid": "berlin-events-bi-home",
+  "title": "Berlin Events BI Home",
+  "tags": ["berlin-events", "home"],
+  "timezone": "Europe/Berlin",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "style": "dark",
+  "graphTooltip": 1,
+  "refresh": "10m",
+  "time": {"from": "now-30d", "to": "now+30d"},
+  "timepicker": {"refresh_intervals": ["5m", "10m", "30m", "1h", "6h", "12h", "1d"]},
+  "links": [
+    {"title": "Events Analytics", "type": "link", "url": "/dashboard/d/berlin-events-analytics/events-analytics?orgId=1", "icon": "dashboard"},
+    {"title": "Pipeline Health", "type": "link", "url": "/dashboard/d/berlin-events-pipeline-health/pipeline-health?orgId=1", "icon": "dashboard"},
+    {"title": "Usage Analytics", "type": "link", "url": "/dashboard/d/berlin-events-usage-analytics/usage-analytics?orgId=1", "icon": "dashboard"},
+    {"title": "Editorial Activity", "type": "link", "url": "/dashboard/d/berlin-events-editorial-activity/editorial-activity?orgId=1", "icon": "dashboard"}
+  ],
+  "panels": [
+    {
+      "id": 100,
+      "type": "text",
+      "title": "",
+      "gridPos": {"h": 5, "w": 24, "x": 0, "y": 0},
+      "fieldConfig": {"defaults": {}, "overrides": []},
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"display:flex;align-items:flex-start;justify-content:space-between;gap:24px;padding:10px 4px 2px\"><div><div style=\"font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#8ab8ff;font-weight:700;margin-bottom:10px\">Berlin Events BI</div><div style=\"font-size:32px;line-height:1.15;font-weight:700;color:#f4f7fb\">Operational dashboard home</div><div style=\"margin-top:10px;max-width:760px;color:#a7b1c2;font-size:14px;line-height:1.5\">A focused overview of event ingestion, public visibility, user activity, and editorial coverage.</div></div><div style=\"min-width:220px;border:1px solid rgba(154,169,191,.22);background:rgba(18,22,30,.72);border-radius:6px;padding:14px 16px\"><div style=\"font-size:12px;color:#a7b1c2;margin-bottom:6px\">Primary flow</div><div style=\"font-size:14px;color:#f4f7fb;font-weight:650\">Raw ingestion -> Dedupe -> Public map -> Editorial picks</div></div></div>"
+      }
+    },
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Visible Upcoming Events",
+      "description": "Upcoming public events after auto-duplicates are hidden.",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 5},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "#73BF69"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#73BF69", "value": null}]}}, "overrides": []},
+      "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS visible_upcoming_events FROM visible_events WHERE datum >= (now() AT TIME ZONE 'Europe/Berlin')::date"}]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Raw Upcoming Events",
+      "description": "Upcoming ingested source rows before dedupe filtering.",
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 5},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "#3D71D9"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#3D71D9", "value": null}]}}, "overrides": []},
+      "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS raw_upcoming_events FROM events WHERE datum >= (now() AT TIME ZONE 'Europe/Berlin')::date"}]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Auto-Duplicates Hidden",
+      "description": "Upcoming raw rows hidden from public views.",
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 5},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "#E02F44"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#E02F44", "value": null}]}}, "overrides": []},
+      "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS hidden_auto_duplicates FROM event_duplicate_links dl JOIN events e ON e.id = dl.duplicate_event_id WHERE dl.decision = 'auto_duplicate' AND e.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date"}]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Event API Hits Today",
+      "description": "Detail, search, and nearby event API usage today.",
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 5},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "#F2CC0C"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#F2CC0C", "value": null}]}}, "overrides": []},
+      "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(sum(event_hits), 0) AS event_api_hits_today FROM usage_metrics_identity WHERE day = (now() AT TIME ZONE 'Europe/Berlin')::date"}]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Public Visible Events",
+      "description": "Visible event count by event date.",
+      "gridPos": {"h": 9, "w": 14, "x": 0, "y": 9},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "fieldConfig": {"defaults": {"unit": "short", "min": 0, "color": {"mode": "palette-classic"}, "custom": {"drawStyle": "bars", "lineInterpolation": "linear", "lineWidth": 1, "fillOpacity": 70, "gradientMode": "none", "spanNulls": false, "showPoints": "never", "stacking": {"mode": "none", "group": "A"}, "axisPlacement": "auto", "axisColorMode": "text", "scaleDistribution": {"type": "linear"}, "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
+      "options": {"legend": {"showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "sum"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "time_series", "rawSql": "SELECT datum::timestamp AS time, 'visible_events' AS metric, count(*) AS value FROM visible_events WHERE datum >= (now() AT TIME ZONE 'Europe/Berlin')::date - INTERVAL '30 days' GROUP BY datum ORDER BY datum"}]
+    },
+    {
+      "id": 6,
+      "type": "text",
+      "title": "Dashboard Directory",
+      "description": "Open the focused dashboard for each operational area.",
+      "gridPos": {"h": 9, "w": 10, "x": 14, "y": 9},
+      "fieldConfig": {"defaults": {}, "overrides": []},
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"display:grid;gap:10px\"><a href=\"/dashboard/d/berlin-events-analytics/events-analytics?orgId=1\" style=\"display:block;padding:12px 14px;border:1px solid rgba(154,169,191,.22);border-radius:6px;background:rgba(28,34,45,.55);color:#f4f7fb;text-decoration:none\"><strong>Events Analytics</strong><br><span style=\"color:#a7b1c2;font-size:12px\">Volume, sources, categories, districts, and upcoming schedule.</span></a><a href=\"/dashboard/d/berlin-events-pipeline-health/pipeline-health?orgId=1\" style=\"display:block;padding:12px 14px;border:1px solid rgba(154,169,191,.22);border-radius:6px;background:rgba(28,34,45,.55);color:#f4f7fb;text-decoration:none\"><strong>Pipeline Health</strong><br><span style=\"color:#a7b1c2;font-size:12px\">Ingestion coverage, geocoding, metadata quality, and dedupe health.</span></a><a href=\"/dashboard/d/berlin-events-usage-analytics/usage-analytics?orgId=1\" style=\"display:block;padding:12px 14px;border:1px solid rgba(154,169,191,.22);border-radius:6px;background:rgba(28,34,45,.55);color:#f4f7fb;text-decoration:none\"><strong>Usage Analytics</strong><br><span style=\"color:#a7b1c2;font-size:12px\">Audience, endpoint usage, token activity, and latency.</span></a><a href=\"/dashboard/d/berlin-events-editorial-activity/editorial-activity?orgId=1\" style=\"display:block;padding:12px 14px;border:1px solid rgba(154,169,191,.22);border-radius:6px;background:rgba(28,34,45,.55);color:#f4f7fb;text-decoration:none\"><strong>Editorial Activity</strong><br><span style=\"color:#a7b1c2;font-size:12px\">Editor's Choice picks and coverage by day, category, and district.</span></a></div>"
+      }
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Current Watchlist",
+      "description": "Operational items that may need attention.",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 18},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false, "filterable": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": [{"matcher": {"id": "byName", "options": "value"}, "properties": [{"id": "custom.align", "value": "right"}]}, {"matcher": {"id": "byName", "options": "dashboard"}, "properties": [{"id": "custom.width", "value": 170}]}]},
+      "options": {"showHeader": true, "cellHeight": "sm", "footer": {"show": false, "countRows": false, "fields": "", "reducer": ["sum"]}},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT 'Pipeline Health' AS dashboard, 'locations missing coordinates' AS item, count(*) AS value FROM locations WHERE lat IS NULL OR lon IS NULL UNION ALL SELECT 'Pipeline Health' AS dashboard, 'possible duplicate links' AS item, count(*) AS value FROM event_duplicate_links WHERE decision = 'possible_duplicate' UNION ALL SELECT 'Events Analytics' AS dashboard, 'upcoming events without category' AS item, count(*) AS value FROM events WHERE datum >= (now() AT TIME ZONE 'Europe/Berlin')::date AND (category IS NULL OR trim(category) = '') UNION ALL SELECT 'Editorial Activity' AS dashboard, 'upcoming days without picks' AS item, count(*) AS value FROM (SELECT e.datum FROM events e LEFT JOIN editors_choice ec ON ec.event_id = e.id WHERE e.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date AND e.datum < (now() AT TIME ZONE 'Europe/Berlin')::date + INTERVAL '14 days' GROUP BY e.datum HAVING count(ec.event_id) = 0) days ORDER BY value DESC, item"}]
+    }
+  ]
+}
