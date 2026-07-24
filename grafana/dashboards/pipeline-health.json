@@ -4,13 +4,13 @@
   "tags": ["berlin-events", "pipeline"],
   "timezone": "Europe/Berlin",
   "schemaVersion": 39,
-  "version": 6,
+  "version": 8,
   "editable": false,
   "style": "dark",
   "graphTooltip": 1,
   "refresh": "10m",
-  "time": {"from": "now-60d", "to": "now+120d"},
-  "timepicker": {"refresh_intervals": ["5m", "10m", "30m", "1h", "6h", "12h", "1d"]},
+  "time": {"from": "now-45d", "to": "now+45d"},
+  "timepicker": {"hidden": false, "refresh_intervals": ["5m", "10m", "30m", "1h", "6h", "12h", "1d"]},
   "panels": [
     {
       "id": 100,
@@ -98,12 +98,12 @@
       "id": 7,
       "type": "timeseries",
       "title": "Event Date Coverage",
-      "description": "Events per calendar day around the present.",
+      "description": "Events per calendar day for the selected dashboard range. Use the time-range control or drag the chart to inspect all stored coverage.",
       "gridPos": {"h": 8, "w": 14, "x": 0, "y": 6},
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "short", "min": 0, "color": {"mode": "fixed", "fixedColor": "#3D71D9"}, "custom": {"drawStyle": "bars", "lineInterpolation": "linear", "lineWidth": 1, "fillOpacity": 70, "gradientMode": "opacity", "spanNulls": false, "showPoints": "never", "stacking": {"mode": "none", "group": "A"}, "axisPlacement": "auto", "axisColorMode": "text", "scaleDistribution": {"type": "linear"}, "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
       "options": {"legend": {"showLegend": false, "displayMode": "list", "placement": "bottom", "calcs": []}, "tooltip": {"mode": "single", "sort": "none"}},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "time_series", "rawSql": "SELECT datum::timestamp AS time, 'events' AS metric, count(*) AS value FROM events WHERE datum >= (now() AT TIME ZONE 'Europe/Berlin')::date - INTERVAL '60 days' GROUP BY datum ORDER BY datum"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "time_series", "rawSql": "SELECT datum::timestamp AS time, 'events' AS metric, count(*) AS value FROM events WHERE $__timeFilter(datum) GROUP BY datum ORDER BY datum"}]
     },
     {
       "id": 8,
@@ -114,7 +114,7 @@
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "d", "color": {"mode": "continuous-GrYlRd"}, "custom": {"lineWidth": 1, "fillOpacity": 80, "gradientMode": "none", "axisPlacement": "auto", "axisColorMode": "text", "scaleDistribution": {"type": "linear"}, "axisCenteredZero": false, "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
       "options": {"orientation": "horizontal", "xTickLabelRotation": 0, "xTickLabelSpacing": 100, "showValue": "auto", "stacking": "none", "groupWidth": 0.7, "barWidth": 0.9, "barRadius": 0, "fullHighlight": false, "colorByField": "days_ahead", "tooltip": {"mode": "single", "sort": "none"}, "legend": {"showLegend": false, "displayMode": "list", "placement": "bottom", "calcs": []}},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(source, 'unknown') AS source, GREATEST(max(datum) - (now() AT TIME ZONE 'Europe/Berlin')::date, 0) AS days_ahead FROM events GROUP BY 1 ORDER BY days_ahead DESC LIMIT 12"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(NULLIF(substring(lower(trim(COALESCE(source, ''))) FROM '^https?://[^/?#]+'), ''), NULLIF(trim(source), ''), 'unknown') AS source, GREATEST(max(datum) - (now() AT TIME ZONE 'Europe/Berlin')::date, 0) AS days_ahead FROM events GROUP BY 1 ORDER BY days_ahead DESC LIMIT 12"}]
     },
     {
       "id": 9,
@@ -136,7 +136,7 @@
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "continuous-YlRd"}, "custom": {"lineWidth": 1, "fillOpacity": 80, "gradientMode": "none", "axisPlacement": "auto", "axisColorMode": "text", "scaleDistribution": {"type": "linear"}, "axisCenteredZero": false, "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
       "options": {"orientation": "horizontal", "xTickLabelRotation": 0, "xTickLabelSpacing": 100, "showValue": "auto", "stacking": "none", "groupWidth": 0.7, "barWidth": 0.9, "barRadius": 0, "fullHighlight": false, "colorByField": "events", "tooltip": {"mode": "single", "sort": "none"}, "legend": {"showLegend": false, "displayMode": "list", "placement": "bottom", "calcs": []}},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(e.source, 'unknown') AS source, count(*) AS events FROM events e JOIN locations l ON l.id = e.location_id WHERE e.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date AND (l.lat IS NULL OR l.lon IS NULL) GROUP BY 1 ORDER BY events DESC LIMIT 12"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(NULLIF(substring(lower(trim(COALESCE(e.source, ''))) FROM '^https?://[^/?#]+'), ''), NULLIF(trim(e.source), ''), 'unknown') AS source, count(*) AS events FROM events e JOIN locations l ON l.id = e.location_id WHERE e.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date AND (l.lat IS NULL OR l.lon IS NULL) GROUP BY 1 ORDER BY events DESC LIMIT 12"}]
     },
     {
       "id": 11,
@@ -150,11 +150,96 @@
       "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT label, value FROM (VALUES ('missing title', (SELECT count(*) FROM events WHERE thema IS NULL OR trim(thema) = '')), ('missing category', (SELECT count(*) FROM events WHERE category IS NULL OR trim(category) = '')), ('missing description', (SELECT count(*) FROM events WHERE description IS NULL OR trim(description) = '')), ('missing image', (SELECT count(*) FROM events WHERE image_url IS NULL OR trim(image_url) = ''))) AS metrics(label, value) ORDER BY value DESC"}]
     },
     {
+      "id": 104,
+      "type": "row",
+      "title": "Actor Data Health",
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 22},
+      "panels": []
+    },
+    {
+      "id": 20,
+      "type": "stat",
+      "title": "Upcoming Actor Attribution",
+      "description": "Share of upcoming events with at least one organizer, promoter, associated group, or direct contact.",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 23},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "fieldConfig": {"defaults": {"unit": "percent", "decimals": 2, "color": {"mode": "fixed", "fixedColor": "#73BF69"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#E02F44", "value": null}, {"color": "#FF9830", "value": 50}, {"color": "#73BF69", "value": 80}]}}, "overrides": []},
+      "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT round(100.0 * count(*) FILTER (WHERE EXISTS (SELECT 1 FROM event_actor_roles r WHERE r.event_id = e.id)) / NULLIF(count(*), 0), 2) AS actor_attribution_percent FROM events e WHERE e.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date"}]
+    },
+    {
+      "id": 21,
+      "type": "stat",
+      "title": "Named Organizations",
+      "description": "Share of organization actor records with a non-empty name.",
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 23},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "fieldConfig": {"defaults": {"unit": "percent", "decimals": 2, "color": {"mode": "fixed", "fixedColor": "#5794F2"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#E02F44", "value": null}, {"color": "#FF9830", "value": 80}, {"color": "#73BF69", "value": 95}]}}, "overrides": []},
+      "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT round(100.0 * count(*) FILTER (WHERE NULLIF(trim(name), '') IS NOT NULL) / NULLIF(count(*), 0), 2) AS named_organizations_percent FROM event_actors WHERE actor_type = 'organization'"}]
+    },
+    {
+      "id": 22,
+      "type": "stat",
+      "title": "Contactable Organizations",
+      "description": "Share of organization actors with an email, phone number, or link.",
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 23},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "fieldConfig": {"defaults": {"unit": "percent", "decimals": 2, "color": {"mode": "fixed", "fixedColor": "#B877D9"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#E02F44", "value": null}, {"color": "#FF9830", "value": 40}, {"color": "#73BF69", "value": 70}]}}, "overrides": []},
+      "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT round(100.0 * count(*) FILTER (WHERE NULLIF(trim(email), '') IS NOT NULL OR NULLIF(trim(phone), '') IS NOT NULL OR COALESCE(cardinality(links), 0) > 0) / NULLIF(count(*), 0), 2) AS contactable_organizations_percent FROM event_actors WHERE actor_type = 'organization'"}]
+    },
+    {
+      "id": 23,
+      "type": "stat",
+      "title": "Unlinked Actors",
+      "description": "Actor records no longer linked to any event role.",
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 23},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "#FF9830"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#73BF69", "value": null}, {"color": "#FF9830", "value": 1}, {"color": "#E02F44", "value": 20}]}}, "overrides": []},
+      "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT count(*) AS unlinked_actors FROM event_actors a WHERE NOT EXISTS (SELECT 1 FROM event_actor_roles r WHERE r.actor_id = a.id)"}]
+    },
+    {
+      "id": 24,
+      "type": "barchart",
+      "title": "Upcoming Actor Role Coverage",
+      "description": "Distinct upcoming events carrying each actor role.",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 27},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "palette-classic"}, "custom": {"lineWidth": 1, "fillOpacity": 80, "gradientMode": "none", "axisPlacement": "auto", "axisColorMode": "text", "scaleDistribution": {"type": "linear"}, "axisCenteredZero": false, "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
+      "options": {"orientation": "horizontal", "xTickLabelRotation": 0, "xTickLabelSpacing": 100, "showValue": "auto", "stacking": "none", "groupWidth": 0.7, "barWidth": 0.9, "barRadius": 0, "fullHighlight": false, "colorByField": "events", "tooltip": {"mode": "single", "sort": "none"}, "legend": {"showLegend": false, "displayMode": "list", "placement": "bottom", "calcs": []}},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT r.role, count(DISTINCT e.id) AS events FROM event_actor_roles r JOIN events e ON e.id = r.event_id WHERE e.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date GROUP BY r.role ORDER BY events DESC, r.role"}]
+    },
+    {
+      "id": 25,
+      "type": "barchart",
+      "title": "Missing Organizer or Promoter by Source",
+      "description": "Upcoming events without an organizer or promoter role, grouped by normalized source base URL.",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 27},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "continuous-YlRd"}, "custom": {"lineWidth": 1, "fillOpacity": 80, "gradientMode": "none", "axisPlacement": "auto", "axisColorMode": "text", "scaleDistribution": {"type": "linear"}, "axisCenteredZero": false, "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
+      "options": {"orientation": "horizontal", "xTickLabelRotation": 0, "xTickLabelSpacing": 100, "showValue": "auto", "stacking": "none", "groupWidth": 0.7, "barWidth": 0.9, "barRadius": 0, "fullHighlight": false, "colorByField": "events", "tooltip": {"mode": "single", "sort": "none"}, "legend": {"showLegend": false, "displayMode": "list", "placement": "bottom", "calcs": []}},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT COALESCE(NULLIF(substring(lower(trim(COALESCE(e.source, ''))) FROM '^https?://[^/?#]+'), ''), NULLIF(trim(e.source), ''), 'unknown') AS source, count(*) AS events FROM events e WHERE e.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date AND NOT EXISTS (SELECT 1 FROM event_actor_roles r WHERE r.event_id = e.id AND r.role IN ('organizer', 'promoter')) GROUP BY 1 ORDER BY events DESC, source LIMIT 15"}]
+    },
+    {
+      "id": 26,
+      "type": "table",
+      "title": "Organization Metadata Gaps",
+      "description": "Organizations attached to upcoming events that lack a name or any contact channel.",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 27},
+      "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false, "filterable": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": [{"matcher": {"id": "byName", "options": "organization"}, "properties": [{"id": "custom.width", "value": 180}]}, {"matcher": {"id": "byName", "options": "source_url"}, "properties": [{"id": "custom.width", "value": 200}]}]},
+      "options": {"showHeader": true, "cellHeight": "sm", "footer": {"show": false, "countRows": false, "fields": "", "reducer": ["sum"]}},
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT a.source_name, COALESCE(NULLIF(trim(a.name), ''), a.external_id) AS organization, string_agg(DISTINCT r.role, ', ' ORDER BY r.role) AS roles, count(DISTINCT e.id) AS upcoming_events, CASE WHEN NULLIF(trim(a.name), '') IS NULL THEN 'missing name' ELSE 'named' END AS name_status, CASE WHEN NULLIF(trim(a.email), '') IS NULL AND NULLIF(trim(a.phone), '') IS NULL AND COALESCE(cardinality(a.links), 0) = 0 THEN 'missing contact' ELSE 'contactable' END AS contact_status, COALESCE(a.source_url, '') AS source_url FROM event_actors a JOIN event_actor_roles r ON r.actor_id = a.id JOIN events e ON e.id = r.event_id WHERE a.actor_type = 'organization' AND e.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date AND (NULLIF(trim(a.name), '') IS NULL OR (NULLIF(trim(a.email), '') IS NULL AND NULLIF(trim(a.phone), '') IS NULL AND COALESCE(cardinality(a.links), 0) = 0)) GROUP BY a.id, a.source_name, a.name, a.external_id, a.email, a.phone, a.links, a.source_url ORDER BY upcoming_events DESC, organization LIMIT 50"}]
+    },
+    {
       "id": 103,
       "type": "row",
       "title": "Dedupe",
       "collapsed": false,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 22},
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 35},
       "panels": []
     },
     {
@@ -162,7 +247,7 @@
       "type": "stat",
       "title": "Visible Upcoming Events",
       "description": "Upcoming public events after auto-duplicates are hidden.",
-      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 23},
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 36},
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "#3D71D9"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#3D71D9", "value": null}]}}, "overrides": []},
       "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
@@ -173,7 +258,7 @@
       "type": "stat",
       "title": "Auto-Duplicates Hidden",
       "description": "Upcoming raw events hidden from public views by auto-duplicate links.",
-      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 23},
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 36},
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "#E02F44"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#E02F44", "value": null}]}}, "overrides": []},
       "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
@@ -184,7 +269,7 @@
       "type": "stat",
       "title": "Possible Duplicate Links",
       "description": "Upcoming duplicate candidates that still need review or threshold tuning.",
-      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 23},
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 36},
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "#FF9830"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#FF9830", "value": null}]}}, "overrides": []},
       "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
@@ -195,7 +280,7 @@
       "type": "stat",
       "title": "Upcoming Suppression",
       "description": "Share of upcoming raw events hidden by auto-dedupe.",
-      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 23},
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 36},
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "percent", "decimals": 2, "color": {"mode": "fixed", "fixedColor": "#FF9830"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "#FF9830", "value": null}]}}, "overrides": []},
       "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "value", "graphMode": "none", "justifyMode": "center"},
@@ -206,7 +291,7 @@
       "type": "timeseries",
       "title": "Raw vs Visible Events per Day",
       "description": "Daily raw event count compared with the public visible count and hidden auto-duplicates.",
-      "gridPos": {"h": 8, "w": 14, "x": 0, "y": 27},
+      "gridPos": {"h": 8, "w": 14, "x": 0, "y": 40},
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"unit": "short", "min": 0, "color": {"mode": "palette-classic"}, "custom": {"drawStyle": "bars", "lineInterpolation": "linear", "lineWidth": 1, "fillOpacity": 65, "gradientMode": "none", "spanNulls": false, "showPoints": "never", "stacking": {"mode": "none", "group": "A"}, "axisPlacement": "auto", "axisColorMode": "text", "scaleDistribution": {"type": "linear"}, "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
       "options": {"legend": {"showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "sum"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
@@ -217,18 +302,18 @@
       "type": "table",
       "title": "Recent Duplicate Links",
       "description": "Newest duplicate relationships involving recent or upcoming duplicate events.",
-      "gridPos": {"h": 8, "w": 10, "x": 14, "y": 27},
+      "gridPos": {"h": 8, "w": 10, "x": 14, "y": 40},
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false, "filterable": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": [{"matcher": {"id": "byName", "options": "created_at"}, "properties": [{"id": "unit", "value": "dateTimeAsIso"}]}, {"matcher": {"id": "byName", "options": "datum"}, "properties": [{"id": "unit", "value": "time:YYYY-MM-DD"}]}, {"matcher": {"id": "byName", "options": "canonical_title"}, "properties": [{"id": "custom.width", "value": 260}]}, {"matcher": {"id": "byName", "options": "duplicate_title"}, "properties": [{"id": "custom.width", "value": 260}]}, {"matcher": {"id": "byName", "options": "canonical_source"}, "properties": [{"id": "custom.width", "value": 180}]}, {"matcher": {"id": "byName", "options": "duplicate_source"}, "properties": [{"id": "custom.width", "value": 180}]}]},
       "options": {"showHeader": true, "cellHeight": "sm", "footer": {"show": false, "countRows": false, "fields": "", "reducer": ["sum"]}},
-      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT dl.created_at, dl.decision, round(dl.score::numeric, 3) AS score, duplicate_event.datum, duplicate_event.von, canonical_event.thema AS canonical_title, duplicate_event.thema AS duplicate_title, canonical_event.source AS canonical_source, duplicate_event.source AS duplicate_source, COALESCE(l.name, '') AS location FROM event_duplicate_links dl JOIN events canonical_event ON canonical_event.id = dl.canonical_event_id JOIN events duplicate_event ON duplicate_event.id = dl.duplicate_event_id LEFT JOIN locations l ON l.id = duplicate_event.location_id WHERE duplicate_event.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date - INTERVAL '7 days' ORDER BY dl.created_at DESC, duplicate_event.datum, duplicate_event.von LIMIT 50"}]
+      "targets": [{"refId": "A", "rawQuery": true, "format": "table", "rawSql": "SELECT dl.created_at, dl.decision, round(dl.score::numeric, 3) AS score, duplicate_event.datum, duplicate_event.von, canonical_event.thema AS canonical_title, duplicate_event.thema AS duplicate_title, COALESCE(NULLIF(substring(lower(trim(COALESCE(canonical_event.source, ''))) FROM '^https?://[^/?#]+'), ''), NULLIF(trim(canonical_event.source), ''), 'unknown') AS canonical_source, COALESCE(NULLIF(substring(lower(trim(COALESCE(duplicate_event.source, ''))) FROM '^https?://[^/?#]+'), ''), NULLIF(trim(duplicate_event.source), ''), 'unknown') AS duplicate_source, COALESCE(l.name, '') AS location FROM event_duplicate_links dl JOIN events canonical_event ON canonical_event.id = dl.canonical_event_id JOIN events duplicate_event ON duplicate_event.id = dl.duplicate_event_id LEFT JOIN locations l ON l.id = duplicate_event.location_id WHERE duplicate_event.datum >= (now() AT TIME ZONE 'Europe/Berlin')::date - INTERVAL '7 days' ORDER BY dl.created_at DESC, duplicate_event.datum, duplicate_event.von LIMIT 50"}]
     },
     {
       "id": 102,
       "type": "row",
       "title": "Detail",
       "collapsed": false,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 35},
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 48},
       "panels": []
     },
     {
@@ -236,7 +321,7 @@
       "type": "table",
       "title": "Recently Geocoded Locations",
       "description": "Most recently geocoded venues.",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 36},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 49},
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false, "filterable": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": [{"matcher": {"id": "byName", "options": "latitude"}, "properties": [{"id": "decimals", "value": 4}, {"id": "custom.align", "value": "right"}]}, {"matcher": {"id": "byName", "options": "longitude"}, "properties": [{"id": "decimals", "value": 4}, {"id": "custom.align", "value": "right"}]}, {"matcher": {"id": "byName", "options": "geocoded_at"}, "properties": [{"id": "unit", "value": "dateTimeAsIso"}]}]},
       "options": {"showHeader": true, "cellHeight": "sm", "footer": {"show": false, "countRows": false, "fields": "", "reducer": ["sum"]}},
@@ -247,7 +332,7 @@
       "type": "table",
       "title": "Locations Missing Coordinates",
       "description": "Venues awaiting geocoding.",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 36},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 49},
       "datasource": {"type": "postgres", "uid": "berlin-events-postgres"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false, "filterable": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": [{"matcher": {"id": "byName", "options": "geocoded_at"}, "properties": [{"id": "unit", "value": "dateTimeAsIso"}]}]},
       "options": {"showHeader": true, "cellHeight": "sm", "footer": {"show": false, "countRows": false, "fields": "", "reducer": ["sum"]}},

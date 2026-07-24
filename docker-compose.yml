@@ -5,4 +5,4 @@ services:
 
   bi-grafana:
     build: ./grafana
-    image: sfarhad/berlin-events-bi-grafana:0.2.2
+    image: sfarhad/berlin-events-bi-grafana:0.2.3
